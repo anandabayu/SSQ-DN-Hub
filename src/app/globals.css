@@ -1,0 +1,51 @@
+@import "tailwindcss";
+
+/*
+ * Palette carried over from the DN Salary app so the merged app still looks
+ * like the tools it replaces.
+ */
+@theme {
+  --color-ink: #14121a;
+  --color-panel: #1d1a26;
+  --color-panel-2: #241f30;
+  --color-line: #362f44;
+  --color-fg: #eae6f2;
+  --color-fg-dim: #a49bb8;
+  --color-gold: #e8b23d;
+  --color-gold-dim: #7a6222;
+  --color-accent: #8b6fe0;
+  --color-accent-dim: #4a3d75;
+  --color-danger: #e0596f;
+  --color-success: #5ecb8a;
+
+  --font-sans: "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  background:
+    radial-gradient(circle at 20% -10%, #2a2038 0%, var(--color-ink) 45%)
+    fixed;
+  color: var(--color-fg);
+  min-height: 100vh;
+  font-family: var(--font-sans);
+}
+
+/* Numeric columns line up only with tabular figures. */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Chrome/Safari draw spinners on number inputs that fight the right-aligned
+   gold columns. */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+}
