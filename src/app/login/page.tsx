@@ -1,5 +1,7 @@
 import { Suspense } from "react";
 
+import { DiscordLink, Logo } from "@/components/brand";
+
 import { LoginForm } from "./login-form";
 
 export default async function LoginPage({
@@ -12,7 +14,8 @@ export default async function LoginPage({
   return (
     <main className="flex min-h-screen items-center justify-center p-6">
       <div className="w-full max-w-sm">
-        <header className="mb-8 text-center">
+        <header className="mb-8 flex flex-col items-center text-center">
+          <Logo className="mb-3 h-auto w-48" />
           <h1 className="bg-gradient-to-r from-gold to-[#f5d98a] bg-clip-text text-2xl font-bold text-transparent">
             SSQ DN Hub
           </h1>
@@ -38,9 +41,12 @@ export default async function LoginPage({
           <LoginForm next={next} />
         </Suspense>
 
-        <p className="mt-6 text-center text-xs text-fg-dim">
-          Accounts are created by an admin. Ask in Discord if you need one.
-        </p>
+        <div className="mt-6 border-t border-line pt-6 text-center">
+          <p className="text-xs text-fg-dim">
+            Accounts are created by an admin. No account yet? Ask in Discord.
+          </p>
+          <DiscordLink className="mt-3 w-full" />
+        </div>
       </div>
     </main>
   );

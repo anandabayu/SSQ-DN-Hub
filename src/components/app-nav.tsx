@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { signOut } from "@/app/login/actions";
+import { Logo } from "@/components/brand";
 
 /**
  * Tracker and Calculator are always present. Salary appears only with the
@@ -35,8 +36,9 @@ export function AppNav({
 
   return (
     <header className="flex flex-wrap items-center gap-x-4 gap-y-3 border-b border-line pb-4">
-      <Link href="/tracker" className="shrink-0">
-        <span className="bg-gradient-to-r from-gold to-[#f5d98a] bg-clip-text text-lg font-bold text-transparent">
+      <Link href="/tracker" className="flex shrink-0 items-center gap-2">
+        <Logo className="h-9 w-auto" />
+        <span className="hidden bg-gradient-to-r from-gold to-[#f5d98a] bg-clip-text text-lg font-bold text-transparent sm:inline">
           SSQ DN Hub
         </span>
       </Link>
