@@ -118,6 +118,27 @@ privilege-escalation vector.
 status — the URL never reaches a browser, and Discord's error bodies (which can
 echo the webhook token) are never forwarded to the caller.
 
+## Performance
+
+Every page render authenticates and then queries. Three things keep that from
+adding up:
+
+- **`requireProfile()` is wrapped in React `cache()`** — the layout needs it for
+  the nav and each section gate needs it again. Without deduplication that was
+  two auth calls and two profile queries per navigation, all sequential.
+- **Identity comes from `getClaims()`, not `getUser()`** — `getUser()` asks the
+  Auth server on every call. `getClaims()` verifies the JWT signature locally
+  when the project uses asymmetric signing keys, and still refreshes an
+  expiring session because it calls `getSession()` internally.
+- **`vercel.json` pins the function region** to `sin1` (Singapore).
+
+> **Set the region to match your Supabase project.** Supabase region is shown
+> under Project Settings → General. If yours is not Singapore, change `sin1` in
+> `vercel.json` to the matching Vercel region — `iad1` US East, `fra1`
+> Frankfurt, `syd1` Sydney. Functions default to US East, so a Singapore
+> database means every query crosses the Pacific twice; with six round trips per
+> navigation that alone was most of the delay.
+
 ## Tests
 
 ```bash

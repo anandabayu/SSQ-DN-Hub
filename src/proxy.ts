@@ -38,11 +38,16 @@ export async function proxy(request: NextRequest) {
     },
   );
 
-  // getUser() revalidates the token with Supabase. Do not swap this for
-  // getSession(), which trusts whatever the cookie claims.
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // getClaims() verifies the JWT signature rather than asking the Auth server
+  // to, so on a project with asymmetric signing keys this costs no network
+  // round trip at all — and this runs on every request. It still refreshes an
+  // expiring session, because it calls getSession() internally, which is the
+  // reason this proxy exists.
+  //
+  // Do NOT swap this for getSession() alone: that trusts whatever the cookie
+  // claims without verifying the signature.
+  const { data: claimsData } = await supabase.auth.getClaims();
+  const user = claimsData?.claims?.sub;
 
   const { pathname } = request.nextUrl;
   const isAuthRoute = pathname.startsWith("/login");
