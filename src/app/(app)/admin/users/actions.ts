@@ -11,6 +11,38 @@ import { createClient } from "@/lib/supabase/server";
  * who forged this request would simply update nothing.
  */
 
+/**
+ * Alias and Discord ID edits.
+ *
+ * These live in `profiles`, so they go through the RLS-bound client — the
+ * "profiles: admin updates all" policy authorises them, and the privilege
+ * guard trigger stops role/access/active being smuggled in through here.
+ */
+export async function updateProfileDetails(
+  id: string,
+  patch: { alias?: string; discord_id?: string },
+) {
+  await requireAdmin();
+  if (!id) return;
+
+  const clean: { alias?: string; discord_id?: string } = {};
+  if (patch.alias !== undefined) {
+    const alias = patch.alias.trim();
+    if (!alias) return { error: "Alias cannot be empty." };
+    clean.alias = alias;
+  }
+  if (patch.discord_id !== undefined) {
+    clean.discord_id = patch.discord_id.trim();
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("profiles").update(clean).eq("id", id);
+
+  revalidatePath("/admin/users");
+  if (error) return { error: error.message };
+  return { ok: true };
+}
+
 export async function setSalaryAccess(formData: FormData) {
   await requireAdmin();
 

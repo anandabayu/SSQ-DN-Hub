@@ -1,6 +1,17 @@
+"use client";
+
+import { useTransition } from "react";
+
+import { Input } from "@/components/ui";
 import type { Profile } from "@/lib/domain/database.types";
 
-import { setActive, setRole, setSalaryAccess } from "./actions";
+import {
+  setActive,
+  setRole,
+  setSalaryAccess,
+  updateProfileDetails,
+} from "./actions";
+import { UserAccountActions } from "./user-actions";
 
 function Toggle({
   action,
@@ -45,20 +56,52 @@ function Toggle({
 
 export function UserRow({
   profile,
+  email,
   isSelf,
 }: {
   profile: Profile;
+  email: string | null;
   isSelf: boolean;
 }) {
-  return (
-    <tr className="border-t border-line transition-colors hover:bg-panel-2/60">
-      <td className="py-2.5">
-        {profile.alias}
-        {isSelf && <span className="ml-1.5 text-xs text-fg-dim">(you)</span>}
-      </td>
-      <td className="py-2.5 text-fg-dim">{profile.discord_id || "—"}</td>
+  const [, startTransition] = useTransition();
 
-      <td className="py-2.5 text-center">
+  const save = (patch: { alias?: string; discord_id?: string }) =>
+    startTransition(() => {
+      void updateProfileDetails(profile.id, patch);
+    });
+
+  return (
+    <tr className="border-t border-line align-top transition-colors hover:bg-panel-2/60">
+      <td className="py-2 pr-2">
+        <Input
+          defaultValue={profile.alias}
+          maxLength={30}
+          aria-label={`Alias for ${profile.alias}`}
+          onBlur={(e) =>
+            e.target.value.trim() &&
+            e.target.value !== profile.alias &&
+            save({ alias: e.target.value })
+          }
+        />
+        {isSelf && (
+          <span className="mt-0.5 block text-xs text-fg-dim">you</span>
+        )}
+      </td>
+
+      <td className="px-1 py-2">
+        <Input
+          defaultValue={profile.discord_id ?? ""}
+          placeholder="—"
+          maxLength={24}
+          aria-label={`Discord ID for ${profile.alias}`}
+          onBlur={(e) =>
+            e.target.value !== (profile.discord_id ?? "") &&
+            save({ discord_id: e.target.value })
+          }
+        />
+      </td>
+
+      <td className="px-1 py-2 text-center">
         <form action={setRole} className="inline">
           <input type="hidden" name="id" value={profile.id} />
           <input
@@ -86,7 +129,7 @@ export function UserRow({
         </form>
       </td>
 
-      <td className="py-2.5 text-center">
+      <td className="px-1 py-2 text-center">
         <Toggle
           action={setSalaryAccess}
           id={profile.id}
@@ -97,7 +140,7 @@ export function UserRow({
         />
       </td>
 
-      <td className="py-2.5 text-center">
+      <td className="px-1 py-2 text-center">
         <Toggle
           action={setActive}
           id={profile.id}
@@ -107,6 +150,10 @@ export function UserRow({
           onLabel="active"
           offLabel="disabled"
         />
+      </td>
+
+      <td className="py-2 pl-1">
+        <UserAccountActions profile={profile} email={email} isSelf={isSelf} />
       </td>
     </tr>
   );
