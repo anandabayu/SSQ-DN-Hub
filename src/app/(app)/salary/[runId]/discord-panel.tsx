@@ -18,9 +18,11 @@ type Kind = "roster" | "items" | "summary" | "test";
 export function DiscordPanel({
   run,
   channels,
+  readOnly,
 }: {
   run: Run;
   channels: WebhookOption[];
+  readOnly: boolean;
 }) {
   const router = useRouter();
   const [, startTransition] = useTransition();
@@ -73,6 +75,19 @@ export function DiscordPanel({
 
     // A newly created thread id is written server-side; pull it into the page.
     router.refresh();
+  }
+
+  // Sending writes the thread and message ids back onto the party, so it is an
+  // edit like any other — a read-only viewer gets nothing here.
+  if (readOnly) {
+    return (
+      <Card title="Discord">
+        <p className="text-sm text-fg-dim">
+          Only the party&apos;s creator or an admin can post this party to
+          Discord.
+        </p>
+      </Card>
+    );
   }
 
   return (

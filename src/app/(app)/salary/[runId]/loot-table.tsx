@@ -21,9 +21,11 @@ import {
 export function LootTable({
   runId,
   items,
+  readOnly,
 }: {
   runId: string;
   items: LootItem[];
+  readOnly: boolean;
 }) {
   const [, startTransition] = useTransition();
 
@@ -84,15 +86,20 @@ export function LootTable({
                     .filter(Boolean)
                     .join(" ")}
                 >
-                  <DragHandle
-                    onDragStart={() => setDragIndex(index)}
-                    onDragEnd={() => setDragIndex(null)}
-                    label={`Reorder ${item.name || "item"}`}
-                  />
+                  {readOnly ? (
+                    <td className="w-7" />
+                  ) : (
+                    <DragHandle
+                      onDragStart={() => setDragIndex(index)}
+                      onDragEnd={() => setDragIndex(null)}
+                      label={`Reorder ${item.name || "item"}`}
+                    />
+                  )}
                   <td className="py-1 pr-2">
                     <Input
                       defaultValue={item.name}
                       placeholder="e.g. Ancient Ore"
+                      disabled={readOnly}
                       onBlur={(e) =>
                         e.target.value !== item.name &&
                         save(item.id, { name: e.target.value })
@@ -106,6 +113,7 @@ export function LootTable({
                       step="any"
                       className="tabular text-right"
                       defaultValue={String(item.sold_price)}
+                      disabled={readOnly}
                       onBlur={(e) =>
                         Number(e.target.value) !== Number(item.sold_price) &&
                         save(item.id, {
@@ -118,24 +126,27 @@ export function LootTable({
                     <input
                       type="checkbox"
                       checked={item.sold}
+                      disabled={readOnly}
                       onChange={(e) => save(item.id, { sold: e.target.checked })}
                       aria-label={`${item.name || "Item"} sold`}
-                      className="size-4 cursor-pointer accent-[#5ecb8a]"
+                      className="size-4 cursor-pointer accent-[#5ecb8a] disabled:cursor-default"
                     />
                   </td>
                   <td className="py-1 text-center">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        startTransition(() => {
-                          void removeLootItem(runId, item.id);
-                        })
-                      }
-                      aria-label={`Remove ${item.name || "item"}`}
-                      className="cursor-pointer rounded px-2 py-1 text-fg-dim hover:bg-danger/10 hover:text-danger"
-                    >
-                      &times;
-                    </button>
+                    {!readOnly && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          startTransition(() => {
+                            void removeLootItem(runId, item.id);
+                          })
+                        }
+                        aria-label={`Remove ${item.name || "item"}`}
+                        className="cursor-pointer rounded px-2 py-1 text-fg-dim hover:bg-danger/10 hover:text-danger"
+                      >
+                        &times;
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -156,15 +167,17 @@ export function LootTable({
         </div>
       )}
 
-      <Button
-        onClick={() =>
-          startTransition(() => {
-            void addLootItem(runId);
-          })
-        }
-      >
-        + Add Loot Item
-      </Button>
+      {!readOnly && (
+        <Button
+          onClick={() =>
+            startTransition(() => {
+              void addLootItem(runId);
+            })
+          }
+        >
+          + Add Loot Item
+        </Button>
+      )}
     </div>
   );
 }

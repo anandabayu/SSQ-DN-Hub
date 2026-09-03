@@ -114,6 +114,19 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Run not found." }, { status: 404 });
   }
 
+  // Sending writes thread and message ids back onto the party, so it counts as
+  // editing it. Same rule as the RLS policy: creator or admin.
+  const { data: canEdit } = await supabase.rpc("can_edit_run", {
+    p_run_id: runId,
+  });
+
+  if (!canEdit) {
+    return NextResponse.json(
+      { error: "Only the party's creator or an admin can post it to Discord." },
+      { status: 403 },
+    );
+  }
+
   // Service role from here: webhooks is admin-only, and the caller may not be
   // an admin.
   const admin = createAdminClient();

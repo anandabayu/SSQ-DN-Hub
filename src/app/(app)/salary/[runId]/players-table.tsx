@@ -30,12 +30,14 @@ export function PlayersTable({
   roster,
   settings,
   totals,
+  readOnly,
 }: {
   runId: string;
   players: RunPlayer[];
   roster: RosterUser[];
   settings: RunSettings;
   totals: RunTotals;
+  readOnly: boolean;
 }) {
   const [, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -121,16 +123,21 @@ export function PlayersTable({
                       .filter(Boolean)
                       .join(" ")}
                   >
-                    <DragHandle
-                      onDragStart={() => setDragIndex(index)}
-                      onDragEnd={() => setDragIndex(null)}
-                      label={`Reorder ${player.name || "player"}`}
-                    />
+                    {readOnly ? (
+                      <td className="w-7" />
+                    ) : (
+                      <DragHandle
+                        onDragStart={() => setDragIndex(index)}
+                        onDragEnd={() => setDragIndex(null)}
+                        label={`Reorder ${player.name || "player"}`}
+                      />
+                    )}
                     <td className="py-1 pr-2">
                       <Input
                         defaultValue={player.name}
                         placeholder="Player"
                         maxLength={30}
+                        disabled={readOnly}
                         onBlur={(e) =>
                           e.target.value !== player.name &&
                           save(player.id, { name: e.target.value })
@@ -142,6 +149,7 @@ export function PlayersTable({
                         defaultValue={player.ign}
                         placeholder="IGN"
                         maxLength={30}
+                        disabled={readOnly}
                         onBlur={(e) =>
                           e.target.value !== player.ign &&
                           save(player.id, { ign: e.target.value })
@@ -153,6 +161,7 @@ export function PlayersTable({
                         defaultValue={player.discord_id}
                         placeholder="Discord ID"
                         maxLength={24}
+                        disabled={readOnly}
                         onBlur={(e) =>
                           e.target.value !== player.discord_id &&
                           save(player.id, { discord_id: e.target.value })
@@ -166,6 +175,7 @@ export function PlayersTable({
                         step="1"
                         className="tabular text-right"
                         defaultValue={String(player.ss_used)}
+                        disabled={readOnly}
                         onBlur={(e) =>
                           Number(e.target.value) !== Number(player.ss_used) &&
                           save(player.id, { ss_used: Number(e.target.value) || 0 })
@@ -182,17 +192,18 @@ export function PlayersTable({
                       <input
                         type="checkbox"
                         checked={player.paid}
+                        disabled={readOnly}
                         onChange={(e) =>
                           save(player.id, { paid: e.target.checked })
                         }
                         aria-label={`${player.name || "Player"} paid`}
-                        className="size-4 cursor-pointer accent-[#5ecb8a]"
+                        className="size-4 cursor-pointer accent-[#5ecb8a] disabled:cursor-default"
                       />
                     </td>
                     <td className="py-1 text-center whitespace-nowrap">
                       {/* Only for ad-hoc players: someone already linked to a
                           saved user has nothing to save. */}
-                      {!player.roster_user_id && player.name.trim() && (
+                      {!readOnly && !player.roster_user_id && player.name.trim() && (
                         <button
                           type="button"
                           onClick={() => {
@@ -221,18 +232,20 @@ export function PlayersTable({
                           ★
                         </span>
                       )}
-                      <button
-                        type="button"
-                        onClick={() =>
-                          startTransition(() => {
-                            void removePlayer(runId, player.id);
-                          })
-                        }
-                        aria-label={`Remove ${player.name || "player"}`}
-                        className="cursor-pointer rounded px-2 py-1 text-fg-dim hover:bg-danger/10 hover:text-danger"
-                      >
-                        &times;
-                      </button>
+                      {!readOnly && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            startTransition(() => {
+                              void removePlayer(runId, player.id);
+                            })
+                          }
+                          aria-label={`Remove ${player.name || "player"}`}
+                          className="cursor-pointer rounded px-2 py-1 text-fg-dim hover:bg-danger/10 hover:text-danger"
+                        >
+                          &times;
+                        </button>
+                      )}
                     </td>
                   </tr>
                 );
@@ -251,7 +264,7 @@ export function PlayersTable({
       {/* Quick-pick from saved users. Typing a saved alias pulls their Discord
           ID and default IGN across; an unknown name is added as-is, so ad-hoc
           players don't have to be saved first. */}
-      <div className="flex flex-wrap gap-2">
+      <div className={`flex flex-wrap gap-2 ${readOnly ? "hidden" : ""}`}>
         <Input
           list="roster-options"
           value={alias}
@@ -285,10 +298,8 @@ export function PlayersTable({
         </Button>
       </div>
 
-      {players.length >= 8 && (
-        <p className="text-xs text-fg-dim">
-          Party is full at 8 players.
-        </p>
+      {!readOnly && players.length >= 8 && (
+        <p className="text-xs text-fg-dim">Party is full at 8 players.</p>
       )}
     </div>
   );

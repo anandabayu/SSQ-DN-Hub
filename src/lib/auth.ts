@@ -86,3 +86,18 @@ export async function requireAdmin(): Promise<Profile> {
 export function canAccessSalary(profile: Profile): boolean {
   return profile.can_access_salary || profile.role === "admin";
 }
+
+/**
+ * Everyone with salary access can read every party; only its creator can
+ * change it, and admins can change all of them.
+ *
+ * This mirrors the `can_edit_run()` policy in migration 0007. That policy is
+ * the enforcement — this exists so the UI can render read-only rather than
+ * offering controls whose writes the database will silently drop.
+ */
+export function canEditRun(
+  profile: Profile,
+  run: { created_by: string | null },
+): boolean {
+  return profile.role === "admin" || run.created_by === profile.id;
+}

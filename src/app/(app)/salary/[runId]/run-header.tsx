@@ -21,7 +21,7 @@ const INLINE_FIELD =
   "hover:border-line hover:bg-panel-2 focus:border-line focus:bg-panel-2 " +
   "focus:outline-none transition-colors";
 
-export function RunHeader({ run }: { run: Run }) {
+export function RunHeader({ run, readOnly }: { run: Run; readOnly: boolean }) {
   const [, startTransition] = useTransition();
   const [name, setName] = useState(run.name);
   const [ign, setIgn] = useState(run.ign);
@@ -41,17 +41,23 @@ export function RunHeader({ run }: { run: Run }) {
           <Button>&larr; Back</Button>
         </Link>
 
-        <Button
-          variant={run.completed ? "default" : "success"}
-          onClick={() => save({ completed: !run.completed })}
-        >
-          {run.completed ? "Reopen" : "Mark as Complete"}
-        </Button>
+        {!readOnly && (
+          <Button
+            variant={run.completed ? "default" : "success"}
+            onClick={() => save({ completed: !run.completed })}
+          >
+            {run.completed ? "Reopen" : "Mark as Complete"}
+          </Button>
+        )}
+        {readOnly && run.completed && (
+          <span className="text-sm font-medium text-success">✓ Completed</span>
+        )}
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
         <input
           value={name}
+          disabled={readOnly}
           onChange={(e) => setName(e.target.value)}
           onBlur={() => name !== run.name && save({ name })}
           maxLength={60}
@@ -61,6 +67,7 @@ export function RunHeader({ run }: { run: Run }) {
 
         <input
           value={ign}
+          disabled={readOnly}
           onChange={(e) => setIgn(e.target.value)}
           onBlur={() => ign !== run.ign && save({ ign })}
           placeholder="IGN"
@@ -83,6 +90,7 @@ export function RunHeader({ run }: { run: Run }) {
                 min="1"
                 step="1"
                 value={ssPrice}
+                disabled={readOnly}
                 onChange={(e) => setSsPrice(e.target.value)}
                 onBlur={() =>
                   Number(ssPrice) !== Number(run.ss_price) &&
@@ -101,6 +109,7 @@ export function RunHeader({ run }: { run: Run }) {
                 min="1"
                 step="1"
                 value={tax}
+                disabled={readOnly}
                 onChange={(e) => setTax(e.target.value)}
                 onBlur={() =>
                   Number(tax) !== Number(run.tax_per_trade) &&

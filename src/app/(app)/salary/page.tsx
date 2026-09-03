@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { createClient } from "@/lib/supabase/server";
+import { canEditRun, requireSalaryAccess } from "@/lib/auth";
 import { Button, Card, EmptyState, Input } from "@/components/ui";
 import {
   computeProgress,
@@ -10,6 +11,7 @@ import {
 import type {
   LootItem,
   RosterUser,
+  Profile,
   Run,
   RunPlayer,
 } from "@/lib/domain/database.types";
@@ -25,7 +27,13 @@ type RunWithChildren = Run & {
   loot_items: LootItem[];
 };
 
-function RunCard({ run }: { run: RunWithChildren }) {
+function RunCard({
+  run,
+  profile,
+}: {
+  run: RunWithChildren;
+  profile: Profile;
+}) {
   const players = run.run_players.map((p) => ({
     ssUsed: Number(p.ss_used),
     paid: p.paid,
@@ -90,7 +98,11 @@ function RunCard({ run }: { run: RunWithChildren }) {
         className="absolute inset-0 rounded-xl"
       />
 
-      <PartyCardActions runId={run.id} runName={run.name} />
+      <PartyCardActions
+        runId={run.id}
+        runName={run.name}
+        canDelete={canEditRun(profile, run)}
+      />
     </div>
   );
 }
@@ -129,6 +141,7 @@ function ProgressBar({
 }
 
 export default async function SalaryPage() {
+  const profile = await requireSalaryAccess();
   const supabase = await createClient();
 
   const [{ data }, { data: roster }] = await Promise.all([
@@ -187,7 +200,7 @@ export default async function SalaryPage() {
         ) : (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {active.map((run) => (
-              <RunCard key={run.id} run={run} />
+              <RunCard key={run.id} run={run} profile={profile} />
             ))}
           </div>
         )}
@@ -200,7 +213,7 @@ export default async function SalaryPage() {
           </summary>
           <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {completed.map((run) => (
-              <RunCard key={run.id} run={run} />
+              <RunCard key={run.id} run={run} profile={profile} />
             ))}
           </div>
         </details>

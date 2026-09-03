@@ -1,7 +1,8 @@
 import { notFound } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/server";
-import { Card } from "@/components/ui";
+import { canEditRun, requireSalaryAccess } from "@/lib/auth";
+import { Banner, Card } from "@/components/ui";
 import {
   computeResidue,
   computeTotals,
@@ -27,6 +28,7 @@ export default async function RunPage({
   params: Promise<{ runId: string }>;
 }) {
   const { runId } = await params;
+  const profile = await requireSalaryAccess();
   const supabase = await createClient();
 
   const [
@@ -55,6 +57,18 @@ export default async function RunPage({
   if (!run) notFound();
 
   const typedRun = run as Run;
+
+  // Who owns it, so a read-only viewer knows who to ask. Admins can read every
+  // profile; a member can only read their own, so this is null for them and
+  // the banner falls back to generic wording.
+  const { data: creator } = typedRun.created_by
+    ? await supabase
+        .from("profiles")
+        .select("alias")
+        .eq("id", typedRun.created_by)
+        .maybeSingle()
+    : { data: null };
+  const creatorAlias = creator?.alias ?? null;
   const typedPlayers = (players ?? []) as RunPlayer[];
   const typedLoot = (loot ?? []) as LootItem[];
 
@@ -80,9 +94,19 @@ export default async function RunPage({
     { label: "Unshared", value: unshared },
   ];
 
+  const editable = canEditRun(profile, typedRun);
+
   return (
     <div className="space-y-4">
-      <RunHeader run={typedRun} />
+      <RunHeader run={typedRun} readOnly={!editable} />
+
+      {!editable && (
+        <Banner tone="warning">
+          <span aria-hidden>👁</span>
+          Read-only &mdash; only {creatorAlias ?? "the party's creator"} or an
+          admin can change this party.
+        </Banner>
+      )}
 
       <Card title={`Players (${typedPlayers.length}/8)`}>
         <PlayersTable
@@ -91,11 +115,12 @@ export default async function RunPage({
           roster={(roster ?? []) as RosterUser[]}
           settings={settings}
           totals={totals}
+          readOnly={!editable}
         />
       </Card>
 
       <Card title={`Loot Items (${typedLoot.length})`}>
-        <LootTable runId={runId} items={typedLoot} />
+        <LootTable runId={runId} items={typedLoot} readOnly={!editable} />
       </Card>
 
       <Card title="Summary">
@@ -127,6 +152,7 @@ export default async function RunPage({
       <DiscordPanel
         run={typedRun}
         channels={(channels ?? []) as WebhookOption[]}
+        readOnly={!editable}
       />
     </div>
   );

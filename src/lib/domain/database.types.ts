@@ -143,6 +143,7 @@ export type Database = {
       is_admin: { Args: Record<never, never>; Returns: boolean };
       is_active_user: { Args: Record<never, never>; Returns: boolean };
       has_salary_access: { Args: Record<never, never>; Returns: boolean };
+      can_edit_run: { Args: { p_run_id: string }; Returns: boolean };
     };
     Enums: Record<never, never>;
     CompositeTypes: Record<never, never>;

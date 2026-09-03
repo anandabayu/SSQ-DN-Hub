@@ -11,9 +11,13 @@ import { copyRun, deleteRun } from "./actions";
 export function PartyCardActions({
   runId,
   runName,
+  canDelete,
 }: {
   runId: string;
   runName: string;
+  /** Copy is open to anyone with salary access — it creates a party they own.
+   *  Deleting someone else's party is not. */
+  canDelete: boolean;
 }) {
   return (
     <div className="absolute top-2 right-2 z-10 flex gap-1">
@@ -29,24 +33,26 @@ export function PartyCardActions({
         </button>
       </form>
 
-      <form
-        action={deleteRun}
-        onSubmit={(e) => {
-          if (!confirm(`Delete party "${runName}"? This cannot be undone.`)) {
-            e.preventDefault();
-          }
-        }}
-      >
-        <input type="hidden" name="runId" value={runId} />
-        <button
-          type="submit"
-          title="Delete party"
-          aria-label={`Delete ${runName}`}
-          className="cursor-pointer rounded px-1.5 py-0.5 text-sm text-fg-dim/60 transition-colors hover:bg-danger/10 hover:text-danger"
+      {canDelete && (
+        <form
+          action={deleteRun}
+          onSubmit={(e) => {
+            if (!confirm(`Delete party "${runName}"? This cannot be undone.`)) {
+              e.preventDefault();
+            }
+          }}
         >
-          &times;
-        </button>
-      </form>
+          <input type="hidden" name="runId" value={runId} />
+          <button
+            type="submit"
+            title="Delete party"
+            aria-label={`Delete ${runName}`}
+            className="cursor-pointer rounded px-1.5 py-0.5 text-sm text-fg-dim/60 transition-colors hover:bg-danger/10 hover:text-danger"
+          >
+            &times;
+          </button>
+        </form>
+      )}
     </div>
   );
 }

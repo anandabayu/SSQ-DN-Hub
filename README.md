@@ -6,7 +6,7 @@ Stream Squad's three Dragon Nest tools merged into one app behind a login.
 | -------------- | ------------------------ | ------------------------------------------------------- |
 | **Tracker**    | everyone                 | private per user; admins get a read-only view of anyone |
 | **Calculator** | everyone                 | none — it deliberately saves nothing                    |
-| **Salary**     | `can_access_salary` only | shared across everyone with the flag                    |
+| **Salary**     | `can_access_salary` only | every party readable; writable by its creator or an admin |
 | **Users**      | admins only              | account creation and permission toggles                 |
 
 Replaces `SSQ DN Tracker/DN Tracker.html`, `SSQ DN CALCULATOR/index.html` and
@@ -46,6 +46,7 @@ Paste each file into the Supabase **SQL Editor**, in order:
 | `supabase/migrations/0004_fix_privilege_guard.sql` | lets the SQL editor and service role past the privilege guard  |
 | `supabase/migrations/0005_webhook_options.sql`     | name-only webhook view for the party channel picker            |
 | `supabase/migrations/0006_summary_message_id.sql`  | tracks the summary message so reposting can delete the old one |
+| `supabase/migrations/0007_party_ownership.sql`     | everyone reads every party; only its creator or an admin writes |
 | `supabase/migrations/0003_bootstrap_admin.sql`     | promotes your first admin                                      |
 
 > Run `0004` **before** `0003`. The privilege guard created in `0002` reverts
