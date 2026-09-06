@@ -21,7 +21,16 @@ const INLINE_FIELD =
   "hover:border-line hover:bg-panel-2 focus:border-line focus:bg-panel-2 " +
   "focus:outline-none transition-colors";
 
-export function RunHeader({ run, readOnly }: { run: Run; readOnly: boolean }) {
+export function RunHeader({
+  run,
+  readOnly,
+  editors,
+}: {
+  run: Run;
+  readOnly: boolean;
+  /** The Editors modal, rendered on the server so it can read the roster. */
+  editors: React.ReactNode;
+}) {
   const [, startTransition] = useTransition();
   const [name, setName] = useState(run.name);
   const [ign, setIgn] = useState(run.ign);
@@ -41,17 +50,23 @@ export function RunHeader({ run, readOnly }: { run: Run; readOnly: boolean }) {
           <Button>&larr; Back</Button>
         </Link>
 
-        {!readOnly && (
-          <Button
-            variant={run.completed ? "default" : "success"}
-            onClick={() => save({ completed: !run.completed })}
-          >
-            {run.completed ? "Reopen" : "Mark as Complete"}
-          </Button>
-        )}
-        {readOnly && run.completed && (
-          <span className="text-sm font-medium text-success">✓ Completed</span>
-        )}
+        <div className="flex flex-wrap items-center gap-2">
+          {editors}
+
+          {!readOnly && (
+            <Button
+              variant={run.completed ? "default" : "success"}
+              onClick={() => save({ completed: !run.completed })}
+            >
+              {run.completed ? "Reopen" : "Mark as Complete"}
+            </Button>
+          )}
+          {readOnly && run.completed && (
+            <span className="text-sm font-medium text-success">
+              ✓ Completed
+            </span>
+          )}
+        </div>
       </div>
 
       <div className="flex flex-wrap items-center gap-3">

@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 import { createClient } from "@/lib/supabase/server";
-import { canEditRun, requireSalaryAccess } from "@/lib/auth";
+import { canManageRun, requireSalaryAccess } from "@/lib/auth";
 import { Button, Card, EmptyState, Input } from "@/components/ui";
 import {
   computeProgress,
@@ -101,7 +101,7 @@ function RunCard({
       <PartyCardActions
         runId={run.id}
         runName={run.name}
-        canDelete={canEditRun(profile, run)}
+        canDelete={canManageRun(profile, run)}
       />
     </div>
   );

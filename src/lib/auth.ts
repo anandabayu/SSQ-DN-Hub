@@ -88,16 +88,29 @@ export function canAccessSalary(profile: Profile): boolean {
 }
 
 /**
- * Everyone with salary access can read every party; only its creator can
- * change it, and admins can change all of them.
- *
- * This mirrors the `can_edit_run()` policy in migration 0007. That policy is
- * the enforcement — this exists so the UI can render read-only rather than
- * offering controls whose writes the database will silently drop.
+ * Two levels of party permission, mirroring `can_manage_run()` and
+ * `can_edit_run()` in migration 0008. Those policies are the enforcement;
+ * these exist so the UI renders read-only rather than offering controls whose
+ * writes the database will silently drop.
  */
-export function canEditRun(
+
+/**
+ * Creator or admin. May delete the party and decide who else can edit it.
+ * An editor deliberately cannot do either — otherwise granting someone edit
+ * rights would also hand them the ability to delete your party.
+ */
+export function canManageRun(
   profile: Profile,
   run: { created_by: string | null },
 ): boolean {
   return profile.role === "admin" || run.created_by === profile.id;
+}
+
+/** May change the party's players, loot and settings. */
+export function canEditRun(
+  profile: Profile,
+  run: { created_by: string | null },
+  editorIds: readonly string[] = [],
+): boolean {
+  return canManageRun(profile, run) || editorIds.includes(profile.id);
 }

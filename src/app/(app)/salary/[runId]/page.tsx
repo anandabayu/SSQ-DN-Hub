@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/server";
-import { canEditRun, requireSalaryAccess } from "@/lib/auth";
+import { canEditRun, canManageRun, requireSalaryAccess } from "@/lib/auth";
 import { Banner, Card } from "@/components/ui";
 import {
   computeResidue,
@@ -14,6 +14,7 @@ import type {
   RosterUser,
   Run,
   RunPlayer,
+  SalaryUser,
   WebhookOption,
 } from "@/lib/domain/database.types";
 
@@ -21,6 +22,7 @@ import { LootTable } from "./loot-table";
 import { PlayersTable } from "./players-table";
 import { RunHeader } from "./run-header";
 import { DiscordPanel } from "./discord-panel";
+import { EditorsModal } from "./editors-modal";
 
 export default async function RunPage({
   params,
@@ -37,6 +39,8 @@ export default async function RunPage({
     { data: loot },
     { data: roster },
     { data: channels },
+    { data: editorRows },
+    { data: salaryUsers },
   ] = await Promise.all([
     supabase.from("runs").select("*").eq("id", runId).single(),
     supabase
@@ -52,23 +56,26 @@ export default async function RunPage({
     supabase.from("roster_users").select("*").order("alias"),
 
     supabase.from("webhook_options").select("*").order("name"),
+    supabase.from("run_editors").select("user_id").eq("run_id", runId),
+    supabase.from("salary_users").select("*").order("alias"),
   ]);
 
   if (!run) notFound();
 
   const typedRun = run as Run;
 
-  // Who owns it, so a read-only viewer knows who to ask. Admins can read every
-  // profile; a member can only read their own, so this is null for them and
-  // the banner falls back to generic wording.
-  const { data: creator } = typedRun.created_by
-    ? await supabase
-        .from("profiles")
-        .select("alias")
-        .eq("id", typedRun.created_by)
-        .maybeSingle()
-    : { data: null };
-  const creatorAlias = creator?.alias ?? null;
+  const candidates = (salaryUsers ?? []) as SalaryUser[];
+  const editorIds = (editorRows ?? []).map((row) => row.user_id);
+
+  // `salary_users` is a name-only view every salary user can read — unlike
+  // `profiles`, which a member can only read their own row of.
+  const byId = new Map(candidates.map((user) => [user.id, user]));
+  const creatorAlias = typedRun.created_by
+    ? (byId.get(typedRun.created_by)?.alias ?? null)
+    : null;
+  const editors = editorIds
+    .map((id) => byId.get(id))
+    .filter((user): user is SalaryUser => Boolean(user));
   const typedPlayers = (players ?? []) as RunPlayer[];
   const typedLoot = (loot ?? []) as LootItem[];
 
@@ -94,17 +101,30 @@ export default async function RunPage({
     { label: "Unshared", value: unshared },
   ];
 
-  const editable = canEditRun(profile, typedRun);
+  const editable = canEditRun(profile, typedRun, editorIds);
+  const manageable = canManageRun(profile, typedRun);
 
   return (
     <div className="space-y-4">
-      <RunHeader run={typedRun} readOnly={!editable} />
+      <RunHeader
+        run={typedRun}
+        readOnly={!editable}
+        editors={
+          <EditorsModal
+            runId={runId}
+            creatorAlias={creatorAlias}
+            editors={editors}
+            candidates={candidates}
+            canManage={manageable}
+          />
+        }
+      />
 
       {!editable && (
         <Banner tone="warning">
           <span aria-hidden>👁</span>
-          Read-only &mdash; only {creatorAlias ?? "the party's creator"} or an
-          admin can change this party.
+          Read-only &mdash; {creatorAlias ?? "the party's creator"}, an admin, or
+          someone they add as an editor can change this party.
         </Banner>
       )}
 

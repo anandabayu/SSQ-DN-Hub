@@ -54,6 +54,20 @@ export type Webhook = {
   updated_at: string;
 }
 
+/** Extra user allowed to edit one party, beyond its creator and admins. */
+export type RunEditor = {
+  run_id: string;
+  user_id: string;
+  granted_by: string | null;
+  created_at: string;
+}
+
+/** id + alias of a user who can reach the Salary section. */
+export type SalaryUser = {
+  id: string;
+  alias: string;
+}
+
 /** Name-only projection of `webhooks` — never carries the URL. */
 export type WebhookOption = {
   id: string;
@@ -131,11 +145,16 @@ export type Database = {
       runs: Table<Run>;
       run_players: Table<RunPlayer>;
       loot_items: Table<LootItem>;
+      run_editors: Table<RunEditor>;
       app_settings: Table<AppSettings>;
     };
     Views: {
       webhook_options: {
         Row: WebhookOption;
+        Relationships: [];
+      };
+      salary_users: {
+        Row: SalaryUser;
         Relationships: [];
       };
     };
@@ -144,6 +163,7 @@ export type Database = {
       is_active_user: { Args: Record<never, never>; Returns: boolean };
       has_salary_access: { Args: Record<never, never>; Returns: boolean };
       can_edit_run: { Args: { p_run_id: string }; Returns: boolean };
+      can_manage_run: { Args: { p_run_id: string }; Returns: boolean };
     };
     Enums: Record<never, never>;
     CompositeTypes: Record<never, never>;

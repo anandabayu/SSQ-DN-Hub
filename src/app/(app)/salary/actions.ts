@@ -161,6 +161,60 @@ export async function deleteRosterUser(formData: FormData) {
  *
  * An unmatched alias still works: ad-hoc players don't have to be saved first.
  */
+/* -------------------------------------------------------------------------
+ * Delegated editors.
+ *
+ * Granting is restricted to the party's creator and admins by the
+ * "run_editors: manager grants" policy — an editor cannot appoint more
+ * editors. The checks here just turn a silently-refused write into a message.
+ * ---------------------------------------------------------------------- */
+
+export async function addRunEditor(runId: string, userId: string) {
+  const profile = await requireSalaryAccess();
+  if (!runId || !userId) return { error: "Pick someone to add." };
+
+  const supabase = await createClient();
+
+  const { data: run } = await supabase
+    .from("runs")
+    .select("created_by")
+    .eq("id", runId)
+    .single();
+
+  if (!run) return { error: "Party not found." };
+  if (profile.role !== "admin" && run.created_by !== profile.id) {
+    return { error: "Only the party's creator or an admin can add editors." };
+  }
+  if (userId === run.created_by) {
+    return { error: "The creator can already edit this party." };
+  }
+
+  const { error } = await supabase
+    .from("run_editors")
+    .insert({ run_id: runId, user_id: userId, granted_by: profile.id });
+
+  revalidatePath(`/salary/${runId}`);
+
+  // Duplicate grant: the primary key rejects it, which is the right outcome
+  // but not worth surfacing as a failure.
+  if (error && error.code !== "23505") return { error: error.message };
+  return { ok: true };
+}
+
+export async function removeRunEditor(runId: string, userId: string) {
+  await requireSalaryAccess();
+  if (!runId || !userId) return;
+
+  const supabase = await createClient();
+  await supabase
+    .from("run_editors")
+    .delete()
+    .eq("run_id", runId)
+    .eq("user_id", userId);
+
+  revalidatePath(`/salary/${runId}`);
+}
+
 export async function addPlayer(
   runId: string,
   input?: { alias?: string; ign?: string },
